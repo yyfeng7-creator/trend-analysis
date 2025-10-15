@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>总数趋势分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin: 30px 0;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .data-table th {
+            background-color: #f2f2f2;
+        }
+        .explanation {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>总数趋势分析（1年、2年、3年移动平均）</h1>
+        
+        <div class="chart-container">
+            <canvas id="trendChart"></canvas>
+        </div>
+        
+        <div class="explanation">
+            <h3>图表说明：</h3>
+            <ul>
+                <li><strong>蓝色线</strong>：原始Total数据，显示季度波动</li>
+                <li><strong>橙色线</strong>：1年移动平均线（4个季度），平滑了短期波动</li>
+                <li><strong>绿色线</strong>：2年移动平均线（8个季度），显示中期趋势</li>
+                <li><strong>红色线</strong>：3年移动平均线（12个季度），显示长期趋势</li>
+            </ul>
+            <p>移动平均分析有助于识别数据的长期趋势，过滤掉季节性和随机波动的影响。</p>
+        </div>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>季度</th>
+                    <th>2201</th>
+                    <th>2202</th>
+                    <th>2203</th>
+                    <th>2204</th>
+                    <th>2301</th>
+                    <th>2302</th>
+                    <th>2303</th>
+                    <th>2304</th>
+                    <th>2401</th>
+                    <th>2402</th>
+                    <th>2403</th>
+                    <th>2404</th>
+                    <th>2501</th>
+                    <th>2502</th>
+                    <th>2503</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Total</td>
+                    <td>8,963</td>
+                    <td>3,823</td>
+                    <td>3,899</td>
+                    <td>5,963</td>
+                    <td>4,223</td>
+                    <td>2,902</td>
+                    <td>3,428</td>
+                    <td>5,821</td>
+                    <td>2,068</td>
+                    <td>3,645</td>
+                    <td>3,993</td>
+                    <td>6,029</td>
+                    <td>3,164</td>
+                    <td>3,341</td>
+                    <td>3,292</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 数据准备
+        const quarters = ['2201', '2202', '2203', '2204', '2301', '2302', '2303', '2304', '2401', '2402', '2403', '2404', '2501', '2502', '2503'];
+        const total = [8963, 3823, 3899, 5963, 4223, 2902, 3428, 5821, 2068, 3645, 3993, 6029, 3164, 3341, 3292];
+        
+        // 计算移动平均函数
+        function calculateMovingAverage(data, period) {
+            const result = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i >= period - 1) {
+                    let sum = 0;
+                    for (let j = 0; j < period; j++) {
+                        sum += data[i - j];
+                    }
+                    result.push(sum / period);
+                } else {
+                    result.push(null);
+                }
+            }
+            return result;
+        }
+        
+        // 计算移动平均
+        const ma1Year = calculateMovingAverage(total, 4);
+        const ma2Year = calculateMovingAverage(total, 8);
+        const ma3Year = calculateMovingAverage(total, 12);
+        
+        // 创建图表
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        
+        // 确保DOM加载完成后再初始化图表
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initChart);
+        } else {
+            initChart();
+        }
+        
+        function initChart() {
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: quarters,
+                    datasets: [
+                        {
+                            label: '原始数据',
+                            data: total,
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: '1年移动平均',
+                            data: ma1Year,
+                            borderColor: 'rgb(255, 159, 64)',
+                            backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: '2年移动平均',
+                            data: ma2Year,
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: '3年移动平均',
+                            data: ma3Year,
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '总数趋势分析（移动平均线）',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '季度'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '数值'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
